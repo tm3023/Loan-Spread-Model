@@ -1,0 +1,140 @@
+# =============================================================================
+# FINANCIAL DATA — NEVER COMMIT (WRDS Terms of Use §4 prohibits redistribution)
+# =============================================================================
+data/raw/
+# data/raw/.gitkeep is the ONLY exception — see bottom of this file
+
+# Raw data file formats (all sources: WRDS, Bloomberg, Refinitiv, EDGAR dumps)
+*.csv
+*.parquet
+*.feather
+*.arrow
+*.hdf5
+*.h5
+*.db
+*.sqlite
+*.sqlite3
+*.sas7bdat
+*.dta
+*.stata
+
+# Spreadsheet formats
+*.xlsx
+*.xls
+*.xlsm
+*.xlsb
+*.ods
+
+# Compressed data archives
+*.zip
+*.tar.gz
+*.tar.bz2
+*.gz
+*.7z
+
+# =============================================================================
+# MODEL WEIGHTS — NEVER COMMIT (trained on licensed data)
+# =============================================================================
+*.pkl
+*.pickle
+*.joblib
+*.ubj
+*.xgb
+*.pt
+*.pth
+*.onnx
+*.safetensors
+models/
+
+# =============================================================================
+# CREDENTIALS & SECRETS
+# =============================================================================
+.env
+.envrc
+*.env
+*.env.*
+.pgpass
+pgpass.conf
+secrets.json
+credentials.json
+api_keys.json
+.wrds_credentials
+*.pem
+*.key
+*.p12
+*.pfx
+
+# =============================================================================
+# PYTHON ARTIFACTS
+# =============================================================================
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.Python
+*.egg-info/
+dist/
+build/
+.eggs/
+pip-wheel-metadata/
+*.whl
+.mypy_cache/
+.ruff_cache/
+.pytest_cache/
+
+# =============================================================================
+# JUPYTER
+# =============================================================================
+.ipynb_checkpoints/
+*-checkpoint.ipynb
+profile_default/
+ipython_config.py
+
+# =============================================================================
+# IDE & OS
+# =============================================================================
+.DS_Store
+.DS_Store?
+._*
+Thumbs.db
+ehthumbs.db
+desktop.ini
+.vscode/settings.json
+.idea/
+*.swp
+*.swo
+
+# =============================================================================
+# VIRTUAL ENVIRONMENTS
+# =============================================================================
+.venv/
+venv/
+env/
+ENV/
+.conda/
+
+# =============================================================================
+# LOGS & TEMP FILES
+# =============================================================================
+*.log
+*.tmp
+*.temp
+*.bak
+*.orig
+
+# =============================================================================
+# PROJECT-SPECIFIC CACHE DIRECTORIES
+# =============================================================================
+data/raw/_edgar_cache/
+data/raw/models/
+data/raw/figures/
+.wrds_cache/
+
+# =============================================================================
+# INTENTIONALLY COMMITTED — force-include these despite parent rules above
+# =============================================================================
+!data/raw/.gitkeep
+!figures/
+!figures/*.png
+!results/
+!results/*.csv
