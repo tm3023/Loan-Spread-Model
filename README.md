@@ -17,7 +17,7 @@ version control by `.gitignore`.
 | Compustat Fundamentals Annual | S&P Global via WRDS | University/institutional WRDS subscription |
 | CRSP Monthly Stock File | CRSP via WRDS | University/institutional WRDS subscription |
 | Chava-Roberts DealScan-Compustat Link | Michael Roberts (Wharton) | [Roberts' data page](https://finance.wharton.upenn.edu/~mrrobert/) |
-| FRED macro series (BAA, AAA, GS10) | Federal Reserve | Public domain — fetched at runtime |
+| FRED macro series (BAA, AAA, GS10) | Federal Reserve | Public domain; fetched at runtime |
 
 See [COMPLIANCE.md](COMPLIANCE.md) for a detailed breakdown of what is and is not permitted
 to be shared publicly under the WRDS Subscriber Agreement.
@@ -31,15 +31,15 @@ borrower credit risk. It reflects default probability, information asymmetry bet
 and borrower, and prevailing conditions in the credit market. Modelling AISD is therefore
 relevant across several areas of practice:
 
-- **Credit portfolio management** — pricing new facilities and marking existing positions to market
-- **CLO structuring** — estimating the cost of debt across heterogeneous collateral pools
-- **Distress early-warning** — identifying balance-sheet deterioration before covenant breaches
+- **Credit portfolio management**: pricing new facilities and marking existing positions to market
+- **CLO structuring**: estimating the cost of debt across heterogeneous collateral pools
+- **Distress early-warning**: identifying balance-sheet deterioration before covenant breaches
 
 This project replicates the empirical framework of Ivashina (2009) and Berg, Saunders &
 Steffen (2016), using institutional WRDS data: LPC DealScan for loan terms, Compustat for
 annual borrower financials, and CRSP for equity market signals. The central finding is that
-gradient-boosted trees capture spread-relevant non-linearities — particularly interactions
-between leverage, firm size, and macro credit conditions — that OLS benchmarks cannot represent.
+gradient-boosted trees capture spread-relevant non-linearities, particularly interactions
+between leverage, firm size, and macro credit conditions, that OLS benchmarks cannot represent.
 
 ---
 
@@ -50,7 +50,7 @@ The following documents the non-obvious technical decisions in this implementati
 ### 1. Server-side SQL with SQLAlchemy 2.x compatibility
 
 DealScan data is extracted via server-side SQL against the WRDS PostgreSQL cluster. All
-filtering — by currency, spread range, and date window — is applied at the database layer,
+filtering by currency, spread range, and date window is applied at the database layer,
 before any data is transferred over the network. The `DISTINCT ON (lpc_tranche_id)` clause
 deduplicates the denormalised lender-share view to one row per facility, also on the
 database side.
@@ -69,7 +69,7 @@ A cross-type join between the covenant subquery (numeric `packageid`) and the De
 
 ### 2. Facility-level entity resolution via Chava-Roberts
 
-Borrower identities are resolved using the Roberts (2008) linking table — a peer-reviewed,
+Borrower identities are resolved using the Roberts (2008) linking table, a peer-reviewed,
 facility-level crosswalk that maps DealScan `facilityid` to Compustat `gvkey`. The
 distinction between facility-level and borrower-level matching is non-trivial; a single
 borrower may maintain multiple facilities with different lenders, maturities, and pricing.
@@ -99,7 +99,7 @@ merged = pd.merge_asof(
 
 A secondary filter removes any rows where `fiscal_year_end >= origination_date`, handling
 edge cases at period boundaries. All imputation medians and z-score scaler statistics are
-computed on the training split only; they are then applied — without re-estimation — to the
+computed on the training split only; they are then applied, without re-estimation, to the
 validation and test sets.
 
 ### 4. Winsorisation at training-set quantiles
@@ -152,7 +152,7 @@ denote missing observations.
 `shap.TreeExplainer` is applied to the fitted XGBoost model on the held-out test set. SHAP
 values additively decompose each prediction into individual feature contributions. This
 provides model-agnostic interpretability; moreover, it allows direct verification that
-leverage — the theoretically dominant risk driver — ranks first in feature importance,
+leverage, the theoretically dominant risk driver, ranks first in feature importance,
 lending credibility to the model's learned representation of credit risk.
 
 ![SHAP Summary](figures/shap_summary_beeswarm.png)
@@ -198,12 +198,12 @@ Machine-readable metrics: [`results/model_metrics.csv`](results/model_metrics.cs
 
 | Category | Features |
 |---|---|
-| **Borrower — balance sheet** | `leverage`, `profitability`, `interest_coverage`, `log_firm_size`, `tangibility`, `cash_ratio` |
-| **Borrower — distress signal** | `altman_z`, `altman_x1` (liquidity), `altman_x2` (retained earnings), `altman_x3` (EBIT/assets), `altman_x4` (equity/debt), `altman_x5` (asset turnover) |
+| **Borrower: balance sheet** | `leverage`, `profitability`, `interest_coverage`, `log_firm_size`, `tangibility`, `cash_ratio` |
+| **Borrower: distress signal** | `altman_z`, `altman_x1` (liquidity), `altman_x2` (retained earnings), `altman_x3` (EBIT/assets), `altman_x4` (equity/debt), `altman_x5` (asset turnover) |
 | **Loan structural** | `log_facility_amount`, `maturity_months`, `collateral_flag`, `covenant_count`, `is_revolver` |
 | **Loan purpose** | One-hot: Corp. purposes, Debt repay, Acquisition line, LBO, Working capital, Recapitalization, Other |
-| **Market** | `eq_vol_12m` — rolling 12-month annualised equity return volatility (from CRSP) |
-| **Macro** | `baa_aaa_spread` — BAA minus AAA yield in basis points; `risk_free_10y` — 10-year Treasury yield (%) |
+| **Market** | `eq_vol_12m`: rolling 12-month annualised equity return volatility (from CRSP) |
+| **Macro** | `baa_aaa_spread`: BAA minus AAA yield in basis points; `risk_free_10y`: 10-year Treasury yield (%) |
 
 All ratio features are winsorised at the 1st and 99th percentile of the training distribution.
 
@@ -217,7 +217,7 @@ All ratio features are winsorised at the 1st and 99th percentile of the training
 | **WRDS Compustat** (`comp.funda`) | `at`, `dltt`, `dlc`, `ebitda`, `xint`, `sale`, `ppent`, `che`, `ceq`, `ni`, `wcap`, `re` | WRDS subscription |
 | **WRDS CRSP** (`crsp.msf`, `crsp.ccmxpf_linktable`) | `ret`, `prc`, `shrout` (monthly); `gvkey` → `permno` link | WRDS subscription |
 | **Chava-Roberts link** | `facilityid` → `gvkey` (facility-level, confidence-scored) | [Roberts' Wharton page](https://finance.wharton.upenn.edu/~mrrobert/) |
-| **FRED** (`BAA`, `AAA`, `GS10`) | Monthly corporate bond yields and 10-year Treasury yield | Public — fetched at runtime |
+| **FRED** (`BAA`, `AAA`, `GS10`) | Monthly corporate bond yields and 10-year Treasury yield | Public; fetched at runtime |
 
 ---
 
@@ -238,14 +238,14 @@ loan-spread-model/
 │   └── eda.ipynb                Exploratory data analysis
 ├── sql/
 │   └── extract.sql              Reference WRDS SQL queries
-├── figures/                     SHAP plots (model outputs — no raw data)
+├── figures/                     SHAP plots (model outputs; no raw data)
 │   ├── shap_summary_beeswarm.png
 │   ├── shap_summary_bar.png
 │   ├── shap_pdp_leverage.png
 │   └── shap_pdp_log_firm_size.png
 ├── results/
 │   └── model_metrics.csv        Out-of-sample RMSE / MAE / R²
-├── data/raw/                    Gitignored — all raw and derived data files
+├── data/raw/                    Gitignored; all raw and derived data files
 │   └── .gitkeep                 Directory marker only
 ├── COMPLIANCE.md                Data licensing and sharing policy
 ├── requirements.txt
@@ -265,7 +265,7 @@ pip install -r requirements.txt
 A WRDS subscription is required, covering DealScan, Compustat, and CRSP. Access is
 typically available through university libraries; contact your institution for details.
 
-### Step 1 — Chava-Roberts link table
+### Step 1: Chava-Roberts link table
 
 1. Download from [finance.wharton.upenn.edu/~mrrobert/](https://finance.wharton.upenn.edu/~mrrobert/)
    → Research → Data → DealScan-Compustat Linking Database
@@ -276,7 +276,7 @@ typically available through university libraries; contact your institution for d
 python src/convert_chava_roberts.py
 ```
 
-### Step 2 — Download WRDS data
+### Step 2: Download WRDS data
 
 ```bash
 python src/wrds_download.py
@@ -284,7 +284,7 @@ python src/wrds_download.py
 # Downloads four files; the CRSP monthly file is the largest (~3M rows)
 ```
 
-### Step 3 — Build panel, engineer features, train models
+### Step 3: Build panel, engineer features, train models
 
 ```bash
 python src/wrds_merge.py       # merges all sources → data/raw/panel.parquet
@@ -293,7 +293,7 @@ python src/model.py            # trains and evaluates all models
 python src/shap_analysis.py    # generates SHAP figures → figures/
 ```
 
-### Step 4 — Explore
+### Step 4: Explore
 
 ```bash
 jupyter lab
@@ -311,7 +311,7 @@ the case study therefore constitutes a genuine test of out-of-sample generalisat
 
 Predicted spreads rise sharply following the 2005 LBO debt loading. A partial recovery is
 observed during 2010–2014, consistent with the broader post-crisis credit cycle. From 2015
-onward, predicted spreads deteriorate again — two fiscal years before the September 2017
+onward, predicted spreads deteriorate again, two fiscal years before the September 2017
 bankruptcy filing. The Altman Z-score remains below the 1.81 distress threshold throughout
 the post-LBO period, corroborating the model's persistently elevated predictions.
 
