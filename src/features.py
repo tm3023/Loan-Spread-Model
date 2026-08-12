@@ -75,8 +75,11 @@ def add_borrower_features(df: pd.DataFrame) -> pd.DataFrame:
     df["tangibility"]       = df["net_ppe"].fillna(0) / at
     df["cash_ratio"]        = df["cash_and_equiv"].fillna(0) / at
 
-    # Altman Z-score components (Altman 1968; manufacturing version)
-    #   Z = 1.2*X1 + 1.4*X2 + 3.3*X3 + 0.6*X4 + 1.0*X5
+    # Altman Z'-score components (Altman 1983; private-firm variant, since X4
+    # uses book equity rather than market equity — appropriate here because
+    # borrowers may be privately held or delisted).
+    #   Z' = 0.717*X1 + 0.847*X2 + 3.107*X3 + 0.420*X4 + 0.998*X5
+    #   Distress threshold: Z' < 1.23
     df["altman_x1"] = df["working_capital"].fillna(0) / at           # liquidity
     df["altman_x2"] = df["retained_earnings"].fillna(0) / at         # accumulated profitability
     df["altman_x3"] = df["ebitda"].fillna(0) / at                    # operating efficiency
@@ -85,11 +88,11 @@ def add_borrower_features(df: pd.DataFrame) -> pd.DataFrame:
     df["altman_x5"] = df["sales"].fillna(0) / at                     # asset turnover
 
     df["altman_z"] = (
-        1.2  * df["altman_x1"] +
-        1.4  * df["altman_x2"] +
-        3.3  * df["altman_x3"] +
-        0.6  * df["altman_x4"] +
-        1.0  * df["altman_x5"]
+        0.717 * df["altman_x1"] +
+        0.847 * df["altman_x2"] +
+        3.107 * df["altman_x3"] +
+        0.420 * df["altman_x4"] +
+        0.998 * df["altman_x5"]
     )
 
     # Winsorise all float features at 1/99

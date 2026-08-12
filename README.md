@@ -35,7 +35,7 @@ relevant across several areas of practice:
 - **CLO structuring**: estimating the cost of debt across heterogeneous collateral pools
 - **Distress early-warning**: identifying balance-sheet deterioration before covenant breaches
 
-This project replicates the empirical framework of Ivashina (2009) and Berg, Saunders &
+This project draws on spread determinants documented in Ivashina (2009) and Berg, Saunders &
 Steffen (2016), using institutional WRDS data: LPC DealScan for loan terms, Compustat for
 annual borrower financials, and CRSP for equity market signals. The central finding is that
 gradient-boosted trees capture spread-relevant non-linearities, particularly interactions
@@ -69,10 +69,12 @@ A cross-type join between the covenant subquery (numeric `packageid`) and the De
 
 ### 2. Facility-level entity resolution via Chava-Roberts
 
-Borrower identities are resolved using the Roberts (2008) linking table, a peer-reviewed,
-facility-level crosswalk that maps DealScan `facilityid` to Compustat `gvkey`. The
-distinction between facility-level and borrower-level matching is non-trivial; a single
-borrower may maintain multiple facilities with different lenders, maturities, and pricing.
+Borrower identities are resolved using the DealScan-Compustat Linking Database maintained by
+Michael Roberts (the data product associated with Chava & Roberts (2008)), which maps DealScan
+`facilityid` to Compustat `gvkey`. Matching is performed at the facility level rather than
+collapsing to one row per borrower: a single borrower's facilities all resolve to the same
+`gvkey`, but each retains its own loan-specific terms (pricing, maturity, covenants) as a
+separate observation.
 
 Two implementation details are worth noting. Links with a confidence score below 0.5 are
 dropped; however, `NaN` scores denote manually verified links and are retained, since
@@ -184,9 +186,8 @@ as XGBoost handles collinear inputs natively.
 | **XGBoost** | **148.24** | **104.48** | **0.448** |
 
 XGBoost achieves approximately a 6% reduction in RMSE relative to OLS, with R² = 0.45
-across a test period that encompasses COVID-era credit stress. This is consistent with
-Berg, Saunders & Steffen (2016), who report R² in the 0.40–0.55 range on comparable data.
-The performance gap between XGBoost and the linear benchmarks reflects the contribution of
+across a test period that encompasses COVID-era credit stress. The performance gap between
+XGBoost and the linear benchmarks reflects the contribution of
 non-linear interactions, particularly those between leverage and macro credit conditions,
 which linear models cannot capture.
 
@@ -199,7 +200,7 @@ Machine-readable metrics: [`results/model_metrics.csv`](results/model_metrics.cs
 | Category | Features |
 |---|---|
 | **Borrower: balance sheet** | `leverage`, `profitability`, `interest_coverage`, `log_firm_size`, `tangibility`, `cash_ratio` |
-| **Borrower: distress signal** | `altman_z`, `altman_x1` (liquidity), `altman_x2` (retained earnings), `altman_x3` (EBIT/assets), `altman_x4` (equity/debt), `altman_x5` (asset turnover) |
+| **Borrower: distress signal** | `altman_z` (Altman Z′, private-firm variant), `altman_x1` (liquidity), `altman_x2` (retained earnings), `altman_x3` (EBIT/assets), `altman_x4` (book equity/debt), `altman_x5` (asset turnover) |
 | **Loan structural** | `log_facility_amount`, `maturity_months`, `collateral_flag`, `covenant_count`, `is_revolver` |
 | **Loan purpose** | One-hot: Corp. purposes, Debt repay, Acquisition line, LBO, Working capital, Recapitalization, Other |
 | **Market** | `eq_vol_12m`: rolling 12-month annualised equity return volatility (from CRSP) |
@@ -312,8 +313,10 @@ the case study therefore constitutes a genuine test of out-of-sample generalisat
 Predicted spreads rise sharply following the 2005 LBO debt loading. A partial recovery is
 observed during 2010–2014, consistent with the broader post-crisis credit cycle. From 2015
 onward, predicted spreads deteriorate again, two fiscal years before the September 2017
-bankruptcy filing. The Altman Z-score remains below the 1.81 distress threshold throughout
-the post-LBO period, corroborating the model's persistently elevated predictions.
+bankruptcy filing. The Altman Z′-score (the book-equity, private-firm variant — Toys R Us
+had no public equity after the 2005 LBO, so the classic market-equity Z is not computable
+for this company) remains below the 1.23 distress threshold throughout the post-LBO period,
+corroborating the model's persistently elevated predictions.
 
 > The case study uses only public SEC EDGAR data (CIK 0001005414) and FRED.
 > No WRDS data is accessed or embedded in the notebook.
@@ -323,7 +326,10 @@ the post-LBO period, corroborating the model's persistently elevated predictions
 ## References
 
 - Ivashina, V. (2009). Asymmetric information effects on loan spreads. *Journal of Financial Economics*, 92(2), 300–319.
-- Berg, T., Saunders, A., & Steffen, S. (2016). The total cost of corporate borrowing in the loan market. *Journal of Finance*, 71(3), 1357–1392.
+- Berg, T., Saunders, A., & Steffen, S. (2016). The total cost of corporate borrowing in the loan market: Don't ignore the fees. *Journal of Finance*, 71(3), 1357–1392.
 - Chava, S., & Roberts, M. R. (2008). How does financing impact investment? The role of debt covenants. *Journal of Finance*, 63(5), 2085–2121.
 - Altman, E. I. (1968). Financial ratios, discriminant analysis and the prediction of corporate bankruptcy. *Journal of Finance*, 23(4), 589–609.
-- Lundberg, S. M., & Lee, S.-I. (2017). A unified approach to interpreting model predictions. *NeurIPS*, 30.
+- Altman, E. I. (1983). *Corporate Financial Distress: A Complete Guide to Predicting, Avoiding, and Dealing with Bankruptcy.* John Wiley & Sons. (Source of the Z′ private-firm variant used in `altman_z`, which substitutes book equity for market equity in X4.)
+- Chen, T., & Guestrin, C. (2016). XGBoost: A scalable tree boosting system. *KDD '16*, 785–794.
+- Lundberg, S. M., & Lee, S.-I. (2017). A unified approach to interpreting model predictions. *NeurIPS*, 30, 4765–4774.
+- Lundberg, S. M., Erion, G., Chen, H., DeGrave, A., Prutkin, J. M., Nair, B., Katz, R., Himmelfarb, J., Bansal, N., & Lee, S.-I. (2020). From local explanations to global understanding with explainable AI for trees. *Nature Machine Intelligence*, 2, 56–67.
