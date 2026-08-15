@@ -200,7 +200,7 @@ Machine-readable metrics: [`results/model_metrics.csv`](results/model_metrics.cs
 | Category | Features |
 |---|---|
 | **Borrower: balance sheet** | `leverage`, `profitability`, `interest_coverage`, `log_firm_size`, `tangibility`, `cash_ratio` |
-| **Borrower: distress signal** | `altman_z` (Altman Z′, private-firm variant), `altman_x1` (liquidity), `altman_x2` (retained earnings), `altman_x3` (EBIT/assets), `altman_x4` (book equity/debt), `altman_x5` (asset turnover) |
+| **Borrower: distress signal** | `altman_z` (Altman Z′, private-firm variant), `altman_x1` (liquidity), `altman_x2` (retained earnings), `altman_x3` (EBIT/assets), `altman_x4` (book equity / total liabilities, approximated as assets − book equity), `altman_x5` (asset turnover) |
 | **Loan structural** | `log_facility_amount`, `maturity_months`, `collateral_flag`, `covenant_count`, `is_revolver` |
 | **Loan purpose** | One-hot: Corp. purposes, Debt repay, Acquisition line, LBO, Working capital, Recapitalization, Other |
 | **Market** | `eq_vol_12m`: rolling 12-month annualised equity return volatility (from CRSP) |

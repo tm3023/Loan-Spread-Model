@@ -83,8 +83,13 @@ def add_borrower_features(df: pd.DataFrame) -> pd.DataFrame:
     df["altman_x1"] = df["working_capital"].fillna(0) / at           # liquidity
     df["altman_x2"] = df["retained_earnings"].fillna(0) / at         # accumulated profitability
     df["altman_x3"] = df["ebitda"].fillna(0) / at                    # operating efficiency
-    df["altman_x4"] = (df["book_equity"].fillna(0)                   # financial structure
-                       / (dltt + dlc).clip(lower=0.001))
+    # X4 = book equity / total liabilities. Total liabilities is approximated
+    # as total assets minus book equity (Compustat does not need a separate
+    # `lt` pull for this); the approximation absorbs preferred stock and
+    # minority interest, which are immaterial for most industrial borrowers.
+    book_equity = df["book_equity"].fillna(0)
+    total_liabilities = (at - book_equity).clip(lower=0.001)
+    df["altman_x4"] = book_equity / total_liabilities                # financial structure
     df["altman_x5"] = df["sales"].fillna(0) / at                     # asset turnover
 
     df["altman_z"] = (
