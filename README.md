@@ -152,10 +152,18 @@ denote missing observations.
 ### 7. SHAP explainability
 
 `shap.TreeExplainer` is applied to the fitted XGBoost model on the held-out test set. SHAP
-values additively decompose each prediction into individual feature contributions. This
-provides model-agnostic interpretability; moreover, it allows direct verification that
-leverage, the theoretically dominant risk driver, ranks first in feature importance,
-lending credibility to the model's learned representation of credit risk.
+values additively decompose each prediction into individual feature contributions, without the
+sampling approximation that model-agnostic SHAP estimators require.
+
+By mean |SHAP value|, loan structural terms dominate: `log_facility_amount`, `collateral_flag`,
+and `is_revolver` rank above every borrower balance-sheet ratio, including `leverage` and
+`altman_z`. This is consistent with how syndicated loans are actually priced — facility size and
+security status map fairly directly onto the spread grid lenders quote — while credit-fundamental
+features contribute smaller, second-order effects on top of that structural baseline. The partial
+dependence plots below show those second-order effects are still directionally sensible: the SHAP
+contribution from leverage rises sharply above roughly 0.6–0.7, and the largest borrowers (highest
+`log_firm_size`) see a distinctly negative spread contribution — though firm size is not simply
+monotonic across the full range; the effect is concentrated at the top end.
 
 ![SHAP Summary](figures/shap_summary_beeswarm.png)
 
@@ -180,12 +188,12 @@ as XGBoost handles collinear inputs natively.
 
 | Model | RMSE (bps) | MAE (bps) | R² |
 |---|---|---|---|
-| OLS | 158.46 | 114.10 | 0.370 |
-| Lasso | 158.29 | 113.59 | 0.371 |
-| Ridge | 158.46 | 114.19 | 0.370 |
-| **XGBoost** | **148.24** | **104.48** | **0.448** |
+| OLS | 158.44 | 114.03 | 0.370 |
+| Lasso | 158.30 | 113.58 | 0.371 |
+| Ridge | 158.49 | 114.17 | 0.369 |
+| **XGBoost** | **148.03** | **103.86** | **0.450** |
 
-XGBoost achieves approximately a 6% reduction in RMSE relative to OLS, with R² = 0.45
+XGBoost achieves approximately a 7% reduction in RMSE relative to OLS, with R² = 0.45
 across a test period that encompasses COVID-era credit stress. The performance gap between
 XGBoost and the linear benchmarks reflects the contribution of
 non-linear interactions, particularly those between leverage and macro credit conditions,
@@ -290,9 +298,15 @@ python src/wrds_download.py
 ```bash
 python src/wrds_merge.py       # merges all sources → data/raw/panel.parquet
 python src/features.py         # engineers features → data/raw/features.parquet
-python src/model.py            # trains and evaluates all models
+python src/model.py            # trains and evaluates all models → data/raw/model_comparison.csv
 python src/shap_analysis.py    # generates SHAP figures → figures/
 ```
+
+`model.py` intentionally writes only to the gitignored `data/raw/` directory, never directly to a
+tracked path. `results/model_metrics.csv` is a manually reviewed copy of `data/raw/model_comparison.csv`,
+committed only after a human confirms it contains aggregate statistics and no data that WRDS's
+Subscriber Agreement restricts (see [COMPLIANCE.md](COMPLIANCE.md)). This is deliberate, not an
+oversight — no script in this repo writes directly into a version-controlled path.
 
 ### Step 4: Explore
 
