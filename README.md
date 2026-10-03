@@ -107,17 +107,18 @@ validation and test sets.
 ### 4. Winsorisation at training-set quantiles
 
 All ratio features are winsorised at the 1st and 99th percentile of the training
-distribution, not the full sample. The clip bounds are derived from training data and stored,
-then reapplied to unseen splits:
+distribution, not the full sample. The clip bounds are estimated on training-period loans
+only (`origination_date <= TRAIN_END`) and then applied to every split:
 
 ```python
-lo, hi = df_train[col].quantile([0.01, 0.99])
+train = df["origination_date"] <= TRAIN_END
+lo, hi = df.loc[train, col].quantile([0.01, 0.99])
 df[col] = df[col].clip(lo, hi)
 ```
 
 This removes the influence of extreme outliers without discarding observations. Crucially,
-the test set is processed with thresholds the model has never seen, preserving the integrity
-of the out-of-sample evaluation.
+the validation and test loans play no part in setting the thresholds, preserving the
+integrity of the out-of-sample evaluation.
 
 ### 5. Time-aware chronological split
 
@@ -189,9 +190,9 @@ as XGBoost handles collinear inputs natively.
 | Model | RMSE (bps) | MAE (bps) | R² |
 |---|---|---|---|
 | OLS | 158.44 | 114.03 | 0.370 |
-| Lasso | 158.30 | 113.58 | 0.371 |
+| Lasso | 158.29 | 113.58 | 0.371 |
 | Ridge | 158.49 | 114.17 | 0.369 |
-| **XGBoost** | **148.03** | **103.86** | **0.450** |
+| **XGBoost** | **148.04** | **103.71** | **0.450** |
 
 XGBoost achieves approximately a 7% reduction in RMSE relative to OLS, with R² = 0.45
 across a test period that encompasses COVID-era credit stress. The performance gap between

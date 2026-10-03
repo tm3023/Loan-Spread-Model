@@ -39,6 +39,11 @@ log = logging.getLogger(__name__)
 # Minimum total assets to avoid division noise
 MIN_AT = 10.0   # $10 million
 
+# Last origination date in the training split. Winsorisation bounds are
+# estimated on training-period loans only, then applied to every split, so no
+# validation/test information leaks into the features. model.py imports this.
+TRAIN_END = "2016-12-31"
+
 
 # ---------------------------------------------------------------------------
 # Borrower financial ratios
@@ -48,7 +53,8 @@ def add_borrower_features(df: pd.DataFrame) -> pd.DataFrame:
     """
     Compute balance-sheet and income-statement ratios from Compustat funda.
 
-    Winsorises all ratios at the 1st/99th percentile to limit outlier influence.
+    Winsorises all ratios at the 1st/99th percentile of the training period
+    (origination_date <= TRAIN_END) to limit outlier influence.
 
     Parameters
     ----------
@@ -100,15 +106,16 @@ def add_borrower_features(df: pd.DataFrame) -> pd.DataFrame:
         0.998 * df["altman_x5"]
     )
 
-    # Winsorise all float features at 1/99
+    # Winsorise all float features at 1/99, with bounds from training loans only
     ratio_cols = [
         "leverage", "profitability", "interest_coverage",
         "tangibility", "cash_ratio",
         "altman_x1", "altman_x2", "altman_x3", "altman_x4", "altman_x5",
         "altman_z"
     ]
+    train = df["origination_date"] <= TRAIN_END
     for col in ratio_cols:
-        lo, hi = df[col].quantile([0.01, 0.99])
+        lo, hi = df.loc[train, col].quantile([0.01, 0.99])
         df[col] = df[col].clip(lo, hi)
 
     log.info("Borrower features added.")
@@ -189,12 +196,13 @@ def add_market_features(df: pd.DataFrame) -> pd.DataFrame:
         baa_aaa_spread — BAA minus AAA yield in bps
         risk_free_10y  — 10-year Treasury yield (%)
 
-    Winsorises eq_vol_12m at the 99th percentile.
+    Winsorises eq_vol_12m at the 99th percentile of the training period.
     """
     df = df.copy()
 
     if "eq_vol_12m" in df.columns:
-        hi = df["eq_vol_12m"].quantile(0.99)
+        train = df["origination_date"] <= TRAIN_END
+        hi = df.loc[train, "eq_vol_12m"].quantile(0.99)
         df["eq_vol_12m"] = df["eq_vol_12m"].clip(upper=hi)
 
     log.info("Market/macro features validated.")

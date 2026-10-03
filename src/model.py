@@ -35,13 +35,14 @@ from sklearn.metrics import (
 from sklearn.preprocessing import StandardScaler
 from xgboost import XGBRegressor
 
+from features import TRAIN_END  # single source for the train/validate boundary
+
 ROOT = Path(__file__).resolve().parents[1]
 RAW = ROOT / "data" / "raw"
 
 FEAT_IN = RAW / "features.parquet"
 MODELS_DIR = RAW / "models"
 
-TRAIN_END = "2016-12-31"
 VALIDATE_END = "2019-12-31"
 TEST_END = "2022-12-31"
 
