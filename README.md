@@ -209,7 +209,7 @@ Machine-readable metrics: [`results/model_metrics.csv`](results/model_metrics.cs
 | Category | Features |
 |---|---|
 | **Borrower: balance sheet** | `leverage`, `profitability`, `interest_coverage`, `log_firm_size`, `tangibility`, `cash_ratio` |
-| **Borrower: distress signal** | `altman_z` (Altman Z′, private-firm variant), `altman_x1` (liquidity), `altman_x2` (retained earnings), `altman_x3` (EBIT/assets), `altman_x4` (book equity / total liabilities, approximated as assets − book equity), `altman_x5` (asset turnover) |
+| **Borrower: distress signal** | `altman_z` (Altman Z′, private-firm variant), `altman_x1` (liquidity), `altman_x2` (retained earnings), `altman_x3` (EBITDA/assets, a proxy for Altman's EBIT/assets because the Compustat extract has no EBIT field; it overstates X3 by D&A/assets), `altman_x4` (book equity / total liabilities, approximated as assets − book equity), `altman_x5` (asset turnover) |
 | **Loan structural** | `log_facility_amount`, `maturity_months`, `collateral_flag`, `covenant_count`, `is_revolver` |
 | **Loan purpose** | One-hot: Corp. purposes, Debt repay, Acquisition line, LBO, Working capital, Recapitalization, Other |
 | **Market** | `eq_vol_12m`: rolling 12-month annualised equity return volatility (from CRSP) |
@@ -321,17 +321,23 @@ jupyter lab
 ## Case Study: Toys "R" Us
 
 [`case_studies/toys_r_us.ipynb`](case_studies/toys_r_us.ipynb) applies the trained XGBoost
-model to Toys R Us annual 10-K filings (2005–2016), sourced from SEC EDGAR. The company was
+model to Toys R Us annual 10-K filings sourced from SEC EDGAR. The company was
 taken private in the 2005 KKR LBO and consequently does not appear in the training set;
 the case study therefore constitutes a genuine test of out-of-sample generalisation.
 
-Predicted spreads rise sharply following the 2005 LBO debt loading. A partial recovery is
-observed during 2010–2014, consistent with the broader post-crisis credit cycle. From 2015
-onward, predicted spreads deteriorate again, two fiscal years before the September 2017
-bankruptcy filing. The Altman Z′-score (the book-equity, private-firm variant — Toys R Us
+EDGAR's structured (XBRL) financial data for the company covers fiscal years ending
+January 2009 to January 2016; the first post-LBO years (2005–2008) are not available from
+this public source. The notebook prices a hypothetical $500M, 5-year secured term loan for
+each year. Over that window the predicted AISD stays in a narrow, elevated band of roughly
+360–385 bps, and the two highest predictions (384 and 381 bps) come from the last two years
+of filings (fiscal years ending January 2015 and 2016) before the September 2017 bankruptcy
+filing. Book leverage rises from 0.58 to 0.68 between the fiscal years ending January 2012
+and January 2016. The Altman Z′-score (the book-equity, private-firm variant — Toys R Us
 had no public equity after the 2005 LBO, so the classic market-equity Z is not computable
-for this company) remains below the 1.23 distress threshold throughout the post-LBO period,
-corroborating the model's persistently elevated predictions.
+for this company) lies between 1.48 and 1.90 wherever EDGAR reports all five inputs, i.e.
+in Altman's grey zone (1.23–2.90) rather than below the 1.23 distress threshold. EDGAR
+reports no separate D&A for the company, so X3 here equals EBIT/assets, matching Altman's
+definition.
 
 > The case study uses only public SEC EDGAR data (CIK 0001005414) and FRED.
 > No WRDS data is accessed or embedded in the notebook.

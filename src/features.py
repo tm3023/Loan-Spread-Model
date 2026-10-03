@@ -88,6 +88,9 @@ def add_borrower_features(df: pd.DataFrame) -> pd.DataFrame:
     #   Distress threshold: Z' < 1.23
     df["altman_x1"] = df["working_capital"].fillna(0) / at           # liquidity
     df["altman_x2"] = df["retained_earnings"].fillna(0) / at         # accumulated profitability
+    # X3: Altman uses EBIT / total assets. The Compustat extract has no EBIT
+    # (oiadp) field, so EBITDA is used as a proxy; this overstates X3 (and Z')
+    # by D&A / total assets relative to the textbook definition.
     df["altman_x3"] = df["ebitda"].fillna(0) / at                    # operating efficiency
     # X4 = book equity / total liabilities. Total liabilities is approximated
     # as total assets minus book equity (Compustat does not need a separate
